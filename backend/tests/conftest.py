@@ -43,7 +43,6 @@ def db(db_engine):
     connection.close()
 
 
-# CHANGE THE SCOPE OF THE CLIENT FIXTURE TO "function"
 @pytest.fixture(scope="function")
 def client(db: Session): # 'db' here is the session provided by the 'db' fixture
     def override_get_db():

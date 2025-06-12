@@ -67,8 +67,7 @@ def test_user_authenticated_token(client: TestClient) -> dict:
         f"{settings.API_V1_STR}/auth/register",
         json=register_data
     )
-    # CHANGE THIS LINE:
-    assert register_response.status_code == status.HTTP_200_OK # <--- Changed from 201 to 200
+    assert register_response.status_code == status.HTTP_200_OK
     registered_user_data = register_response.json()
 
     # 2. Log in to get a token
