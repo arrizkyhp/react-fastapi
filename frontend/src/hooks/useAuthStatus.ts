@@ -1,11 +1,16 @@
-import {User} from "@/types/user.ts";
 import useGetData from "./useGetData";
 import {ENDPOINTS} from "@/constants/apiUrl.ts";
 import {usePostData} from "@/hooks/useMutateData.ts";
 
+
 interface AuthStatusResponse {
-  logged_in: boolean;
-  user?: User;
+  email: string
+  username: string
+  full_name: string
+  is_active: boolean
+  id: number
+  created_at: string
+  updated_at: string
 }
 
 export const useAuthStatus = () => {
@@ -13,6 +18,9 @@ export const useAuthStatus = () => {
     USERS: {
       ME
     },
+    AUTHENTICATION: {
+      LOGOUT
+    }
   } = ENDPOINTS;
 
   const {
@@ -36,23 +44,19 @@ export const useAuthStatus = () => {
   } = usePostData(
       // Use `any` for response if not strictly typed, or create LogoutResponse
       ["logout"], // Key for the logout mutation
-      "http://127.0.0.1:5000/api/auth/logout", // Logout endpoint
+      LOGOUT, // Logout endpoint
       {
         options: {
           onSuccess: () => {
             refetch();
           },
         },
-      }
+      },
+      ['authStatus']
   );
 
-  const loggedIn = authStatusData?.logged_in || false;
-  const user = authStatusData?.user || null;
-
   return {
-    data: authStatusData,
-    loggedIn,
-    user,
+    authStatusData,
     isLoading,
     logout,
     isLoggingOut,

@@ -17,7 +17,6 @@ import {toast} from "sonner";
 import {useNavigate} from "react-router-dom";
 import { usePostData } from "@/hooks/useMutateData";
 import {ENDPOINTS} from "@/constants/apiUrl.ts";
-import {CustomApiError} from "@/types/errors.ts";
 import {LoginResponse} from "@/types/responses.ts";
 
 // Updated Zod schema
@@ -54,14 +53,7 @@ const LoginPage = () => {
         LOGIN, // The login API endpoint
         {
             options:  {
-                onSuccess: (data) => {
-                    // Store tokens in localStorage
-                    if (data.access_token) {
-                        localStorage.setItem('access_token', data.access_token);
-                    }
-                    if (data.refresh_token) {
-                        localStorage.setItem('refresh_token', data.refresh_token);
-                    }
+                onSuccess: () => {
 
                     toast("Login successfully!", {
                         position: "top-center",
@@ -69,9 +61,10 @@ const LoginPage = () => {
                     navigate("/");
                 },
                 onError: (error) => {
-                    const customError = error as CustomApiError;
-                    const errorType = customError.error_type || 'Error';
-                    const errorDetail = customError.detail || customError.message || 'An error occurred';
+                    const apiErrorData = error.response?.data?.detail; // Access the 'detail' object
+
+                    const errorType = apiErrorData?.error_type || 'Error';
+                    const errorDetail = apiErrorData?.detail || error.message || 'An unknown error occurred'; // Fallback to error.message for non-API errors
 
                     toast(`${errorType}: ${errorDetail}`, {
                         position: "top-center",

@@ -1,6 +1,7 @@
 import {UseMutationOptions, UseQueryOptions} from "@tanstack/react-query";
 import {BaseError} from "@/types/responses.ts";
 import {AxiosRequestHeaders} from "axios";
+import {CustomApiError} from "@/types/errors.ts";
 
 export type FetchQueryExtras<T, TParam> = {
     options?: Omit<
@@ -18,7 +19,7 @@ export type FetchQueryExtras<T, TParam> = {
 
 export type MutateQueryExtras<TData, TVariables = unknown> = {
     options?: Omit<
-        UseMutationOptions<TData, BaseError, TVariables>,
+        UseMutationOptions<TData, CustomApiError, TVariables>,
         'mutationFn'
     > & {
         headers?: AxiosRequestHeaders; // Allow custom headers for the specific mutation

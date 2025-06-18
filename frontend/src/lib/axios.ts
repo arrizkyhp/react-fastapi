@@ -16,96 +16,77 @@ const api: AxiosInstance = axios.create({
     },
 });
 
-// Add a request interceptor to include Bearer token
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('access_token');
-
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
-
 // Add a response interceptor to handle errors globally
 api.interceptors.response.use(
     (response: AxiosResponse) => response,
     async (error: AxiosError<any>) => {
         const originalRequest = error.config as RetryAxiosRequestConfig;
+        const status = error.response?.status;
+        const requestUrl = originalRequest.url;
 
-        // Handle token refresh for 401 errors
-        if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+        // Condition 1: It's a 401 error
+        // Condition 2: The original request has not been retried yet
+        // Condition 3: IMPORTANT: The original request IS NOT the login or refresh endpoint itself
+        if (
+            status === 401 &&
+            originalRequest &&
+            !originalRequest._retry &&
+            !requestUrl?.includes('/auth/login') && // Don't try to refresh if login itself failed
+            !requestUrl?.includes('/auth/refresh') // Don't try to refresh if refresh itself failed (prevent loop)
+        ) {
             originalRequest._retry = true;
 
-            const refreshToken = localStorage.getItem('refresh_token');
-            if (refreshToken) {
-                try {
-                    // Call your refresh token endpoint
-                    const response = await axios.post(`${API_BASE_URL}/${API_VERSION}/auth/refresh`, {
-                        refresh_token: refreshToken
-                    });
+            try {
+                // Attempt to refresh the token using the refresh endpoint
+                // Axios will automatically send the refresh_token cookie due to withCredentials: true
+                await axios.post(`${API_BASE_URL}/${API_VERSION}/auth/refresh`, {}, {
+                    withCredentials: true
+                });
 
-                    const { access_token } = response.data;
-                    localStorage.setItem('access_token', access_token);
+                // If refresh is successful, cookies are updated automatically by the backend.
+                // Now, retry the original failed request.
+                const retryConfig: AxiosRequestConfig = {
+                    ...originalRequest,
+                    withCredentials: true
+                };
 
-                    // Retry the original request with new token
-                    if (originalRequest.headers) {
-                        originalRequest.headers.Authorization = `Bearer ${access_token}`;
-                    }
-
-                    // Convert to AxiosRequestConfig for the retry
-                    const retryConfig: AxiosRequestConfig = {
-                        ...originalRequest,
-                        headers: originalRequest.headers
-                    };
-
-                    return api.request(retryConfig);
-                } catch (refreshError) {
-                    // Refresh failed, clear tokens and redirect to login
-                    localStorage.removeItem('access_token');
-                    localStorage.removeItem('refresh_token');
-                    if (window.location.pathname !== '/login') {
-                        window.location.href = '/login';
-                    }
-                    return Promise.reject(refreshError);
+                return api.request(retryConfig);
+            } catch (refreshError) {
+                // If refresh token call itself fails (e.g., refresh token expired/invalid),
+                // then we must redirect to login.
+                console.error("Refresh token failed, redirecting to login", refreshError);
+                if (window.location.pathname !== '/login') {
+                    window.location.href = '/login'; // Full page reload to ensure state is clear
                 }
+                // Important: Re-reject the promise so the original mutation/query gets an error
+                return Promise.reject(refreshError);
             }
         }
 
-        // Handle other errors
+        // Handle other errors (including 401s for login/refresh, and other non-401 errors)
         if (error.response) {
             console.error('API Error Response:', error.response.status, error.response.data);
 
-            const errorData = error.response.data;
-            let errorMessage = `Request failed with status ${error.response.status}`;
-
-            if (errorData?.detail) {
-                const { error_type, detail } = errorData.detail;
-                errorMessage = detail || `${error_type}: An error occurred`;
-            } else {
-                errorMessage = errorData?.message ||
-                    errorData?.error ||
-                    errorMessage;
+            // Ensure the error.response.data structure is consistent
+            // If the backend returns a different structure for login 401s, handle it here
+            if (!error.response.data?.detail && error.response.data?.message) {
+                error.response.data = {
+                    detail: {
+                        status_code: error.response.status,
+                        error_type: "api_error", // Default or 'server_error'
+                        detail: error.response.data.message || 'An unknown error occurred on the server',
+                    }
+                };
             }
-
-            const customError = new Error(errorMessage);
-            (customError as any).error_type = errorData?.detail?.error_type;
-            (customError as any).detail = errorData?.detail?.detail;
-            (customError as any).status_code = errorData?.detail?.status_code;
-
-            throw customError;
+            // Re-throw the original error to be caught by react-query's onError
+            return Promise.reject(error);
 
         } else if (error.request) {
             console.error('API Error: No response received for request:', error.request);
-            throw new Error('No response from server. Please check your network connection.');
+            return Promise.reject(new AxiosError('No response from server. Please check your network connection.', AxiosError.ERR_NETWORK, originalRequest, error.request, undefined));
         } else {
             console.error('API Error: Request setup failed:', error.message);
-            throw new Error(`An unexpected error occurred: ${error.message}`);
+            return Promise.reject(new AxiosError(`An unexpected error occurred: ${error.message}`, AxiosError.ERR_BAD_REQUEST, originalRequest, undefined, undefined));
         }
     }
 );

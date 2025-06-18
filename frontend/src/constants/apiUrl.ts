@@ -2,6 +2,7 @@ export const ENDPOINTS = {
     AUTHENTICATION: {
         STATUS: '/auth/status',
         LOGIN: '/auth/login',
+        LOGOUT: '/auth/logout',
     },
     USERS: {
         ME: '/users/me',

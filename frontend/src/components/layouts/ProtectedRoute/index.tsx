@@ -7,8 +7,7 @@ import {ReactNode} from "react";
 // If not, it redirects to the login page
 export const ProtectedRoute = (props: { children: ReactNode }) => {
     const {children} = props;
-    const accessToken = localStorage.getItem('access_token');
-    const { isLoading } = useAuthStatus();
+    const { authStatusData, isLoading } = useAuthStatus();
 
     // Show loading state while checking authentication
     if (isLoading) {
@@ -17,15 +16,9 @@ export const ProtectedRoute = (props: { children: ReactNode }) => {
         </div>;
     }
 
-    // If no token at all, redirect immediately
-    if (!accessToken) {
+    if (!authStatusData?.is_active) {
         return <Navigate to="/login" replace />;
     }
-
-    // Redirect to login if not authenticated
-    // if (!data?.logged_in) {
-    //     return <Navigate to="/login" replace />;
-    // }
 
     // Render child routes if authenticated
     return (
@@ -37,11 +30,22 @@ export const ProtectedRoute = (props: { children: ReactNode }) => {
 
 // Redirect already authenticated users away from login page
 export const RedirectIfAuthenticated = ({ children }: { children: ReactNode }) => {
-    const accessToken = localStorage.getItem('access_token');
+    const { authStatusData, isLoading } = useAuthStatus();
 
-    if (accessToken) {
+    // Show loading state while checking authentication
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+            </div>
+        );
+    }
+
+    // If user is authenticated and active, redirect to home
+    if (authStatusData?.is_active) {
         return <Navigate to="/" replace />;
     }
 
+    // If not authenticated, show the children (login page)
     return <>{children}</>;
 };

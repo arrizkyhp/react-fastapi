@@ -1,9 +1,8 @@
 import {MutateQueryExtras} from "@/types/queries.ts";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {AxiosError} from "axios";
-import {BaseError} from "@/types/responses.ts";
 import noop from "@/utils/noop.ts";
 import api from "@/lib/axios.ts";
+import {CustomApiError} from "@/types/errors.ts";
 
 // --- Main useMutateData Hook ---
 export const useMutateData = <TData = void, TVariables = unknown>(
@@ -33,7 +32,7 @@ export const useMutateData = <TData = void, TVariables = unknown>(
         isError,
         isPending: isLoading,
         error,
-    } = useMutation<TData, AxiosError<BaseError>, TVariables>({
+    } = useMutation<TData, CustomApiError, TVariables>({
         mutationKey: key, // Use the provided key for the mutation
         mutationFn: async (body: TVariables) => {
             let response;

@@ -17,7 +17,7 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import {Link, useLocation, useNavigate} from "react-router-dom";
+import {Link, useLocation} from "react-router-dom";
 import { menu } from "@/constants/menu.tsx";
 import {
   DropdownMenu,
@@ -39,17 +39,14 @@ import {
 } from "@/components/ui/popover.tsx";
 
 const AppSidebar = () => {
-  const { isLoggingOut, user } = useAuthStatus();
-  const { username, email } = user || {};
+  const { isLoggingOut, authStatusData, logout } = useAuthStatus();
+  const { username, email } = authStatusData || {};
   const location = useLocation();
-  const navigate = useNavigate();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    navigate('/login', { replace: true });
+    logout({})
   };
 
   const isGroupActive = (submenu: SubMenuItem[]) => {
@@ -224,7 +221,7 @@ const AppSidebar = () => {
                   >
                     <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white">
                     <span className="text-sm font-semibold">
-                      {generateAbbreviation(user?.username || "")}
+                      {generateAbbreviation(authStatusData?.username || "")}
                     </span>
                     </div>
                     <div className="grid flex-1 text-left text-sm leading-tight">
