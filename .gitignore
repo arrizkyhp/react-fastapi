@@ -12,6 +12,11 @@ backend/.venv/
 backend/venv/
 backend/env/
 
+# Frontend
+frontend/.idea
+frontend/node_modules
+frontend/.env
+
 # Database files
 backend/*.db
 *.db # Matches test.db, your SQLite database file
