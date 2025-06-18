@@ -22,6 +22,7 @@ const router = createBrowserRouter([
         // This is your authenticated route branch.
         // LayoutWithSidebar provides ProtectedRoute and SidebarProvider.
         // It renders <App />, which then renders its own <Outlet /> for MainContentLayout.
+        path: "/",
         element: <LayoutWithSidebar />,
         // errorElement: <ErrorPage />, // Optional error page
         children: [
@@ -78,15 +79,8 @@ const router = createBrowserRouter([
     },
     // --- Public Routes (no sidebar, no PageHeaderContext) ---
     {
-        path: '/', // This handles your public routes (like login)
-        element: <RedirectIfAuthenticated />,
-        children: [
-            {
-                path: 'login',
-                element: <LoginPage />,
-            },
-            // Add more public routes here that should redirect if logged in
-        ],
+        path: '/login',
+        element: <RedirectIfAuthenticated><LoginPage /></RedirectIfAuthenticated>,
     },
 ]);
 

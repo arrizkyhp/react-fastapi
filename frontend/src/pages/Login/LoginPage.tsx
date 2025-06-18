@@ -17,6 +17,8 @@ import {toast} from "sonner";
 import {useNavigate} from "react-router-dom";
 import { usePostData } from "@/hooks/useMutateData";
 import {ENDPOINTS} from "@/constants/apiUrl.ts";
+import {CustomApiError} from "@/types/errors.ts";
+import {LoginResponse} from "@/types/responses.ts";
 
 // Updated Zod schema
 const loginSchema = z.object({
@@ -47,29 +49,36 @@ const LoginPage = () => {
     });
 
 // Use your custom usePostData hook
-    const { mutate: loginMutate } = usePostData(
+    const { mutate: loginMutate } = usePostData<LoginResponse>(
         ["login"], // A unique key for this mutation
         LOGIN, // The login API endpoint
         {
             options:  {
-                onSuccess: () => {
+                onSuccess: (data) => {
+                    // Store tokens in localStorage
+                    if (data.access_token) {
+                        localStorage.setItem('access_token', data.access_token);
+                    }
+                    if (data.refresh_token) {
+                        localStorage.setItem('refresh_token', data.refresh_token);
+                    }
+
                     toast("Login successfully!", {
                         position: "top-center",
                     });
                     navigate("/");
                 },
                 onError: (error) => {
-                    const errorMessage =
-                        error?.message ||
-                        "Login failed! Please check your credentials.";
+                    const customError = error as CustomApiError;
+                    const errorType = customError.error_type || 'Error';
+                    const errorDetail = customError.detail || customError.message || 'An error occurred';
 
-                    toast(errorMessage, {
+                    toast(`${errorType}: ${errorDetail}`, {
                         position: "top-center",
                     });
                 },
             },
         },
-        ['authStatus']
     );
 
     function onSubmit(values: z.infer<typeof loginSchema>) {

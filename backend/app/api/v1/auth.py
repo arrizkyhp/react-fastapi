@@ -10,6 +10,9 @@ from ...schemas.auth import Token, LoginRequest, RefreshTokenRequest, ErrorRespo
 from ...schemas.user import UserCreate, UserResponse
 from ...core.config import settings
 
+from ..deps import get_current_active_user
+from ...models.user import User as DBUser
+
 router = APIRouter()
 
 
@@ -119,3 +122,26 @@ def refresh_token(token_data: RefreshTokenRequest, db: Session = Depends(get_db)
         "refresh_token": new_refresh_token,
         "token_type": "bearer"
     }
+
+@router.post("/logout")
+def logout(current_user: DBUser = Depends(get_current_active_user)):
+    """
+    Handles user logout. For stateless JWTs, this primarily serves
+    as a client-side instruction to discard tokens.
+
+    Requires an authenticated user to confirm logout, providing a layer
+    of security by ensuring only logged-in users can trigger this endpoint.
+    """
+    # In a stateless JWT system, there's nothing to "invalidate" on the server
+    # side for the token itself, as it's self-contained and expires on its own.
+    # The primary "logout" action is the client-side discarding of tokens.
+    #
+    # However, you might want to perform server-side actions here like:
+    # - Logging the logout event.
+    # - Revoking the refresh token from a database (if you implement that).
+    # - If you had session-based authentication (e.g., storing session IDs),
+    #   you would delete the server-side session here.
+
+    # Returning a simple success message
+    return {"message": "Successfully logged out"}
+

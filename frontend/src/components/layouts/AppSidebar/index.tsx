@@ -17,7 +17,7 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Link, useLocation } from "react-router-dom";
+import {Link, useLocation, useNavigate} from "react-router-dom";
 import { menu } from "@/constants/menu.tsx";
 import {
   DropdownMenu,
@@ -39,14 +39,17 @@ import {
 } from "@/components/ui/popover.tsx";
 
 const AppSidebar = () => {
-  const { logout, isLoggingOut, user } = useAuthStatus();
+  const { isLoggingOut, user } = useAuthStatus();
   const { username, email } = user || {};
   const location = useLocation();
+  const navigate = useNavigate();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
   const handleLogout = () => {
-    logout({})
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    navigate('/login', { replace: true });
   };
 
   const isGroupActive = (submenu: SubMenuItem[]) => {
