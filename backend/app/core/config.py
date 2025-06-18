@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import Literal
 
 class Settings(BaseSettings):
     DATABASE_URL: str
@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "FastAPI Auth"
     DEBUG: bool = False
     CORS_ORIGINS: str = "http://localhost:5173,https://your-staging-url.com"
+    ENVIRONMENT: Literal["development", "production"] = "development"
+    BACKEND_HOST_FOR_COOKIES: str = "localhost"
 
     class Config:
         env_file = ".env"

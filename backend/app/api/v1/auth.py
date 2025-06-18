@@ -1,6 +1,7 @@
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from ...core.database import get_db
@@ -44,7 +45,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     return user_crud.create_user(db=db, user=user)
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=dict)
 def login(user_credentials: LoginRequest, db: Session = Depends(get_db)):
     user = user_crud.authenticate(
         db, username=user_credentials.username, password=user_credentials.password
@@ -72,16 +73,53 @@ def login(user_credentials: LoginRequest, db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": user.username})
     refresh_token = create_refresh_token(data={"sub": user.username})
 
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
-    }
+    response_content = {"message": "Login successful!"}
+
+    response = JSONResponse(content=response_content)
+
+    # Set Access Token as an HttpOnly cookie
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,  # Make it HttpOnly
+        secure=settings.ENVIRONMENT == "production",  # Only True in production for HTTPS
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # max_age in seconds
+        samesite="lax",  # Important for CSRF protection
+        path="/",  # Make it available to all paths
+        domain=settings.BACKEND_HOST_FOR_COOKIES
+    )
+
+    # Set Refresh Token as an HttpOnly cookie
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,  # Make it HttpOnly
+        secure=settings.ENVIRONMENT == "production",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,  # max_age in seconds
+        samesite="lax",
+        path="/",  # Make it available to all paths for simplicity
+        domain=settings.BACKEND_HOST_FOR_COOKIES
+    )
+
+    return response
 
 
-@router.post("/refresh", response_model=Token)
-def refresh_token(token_data: RefreshTokenRequest, db: Session = Depends(get_db)):
-    payload = verify_token(token_data.refresh_token)
+@router.post("/refresh", response_model=dict)
+def refresh_token(request: Request, db: Session = Depends(get_db)):
+    # Get refresh token from cookies
+    refresh_token_cookie = request.cookies.get("refresh_token")
+    if not refresh_token_cookie:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=ErrorResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                error_type="token_error",
+                detail="Refresh token missing from cookies"
+            ).model_dump()
+        )
+
+    # Use the token from the cookie for verification
+    payload = verify_token(refresh_token_cookie)  # <--- Use refresh_token_cookie
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -115,33 +153,64 @@ def refresh_token(token_data: RefreshTokenRequest, db: Session = Depends(get_db)
         )
 
     access_token = create_access_token(data={"sub": user.username})
-    new_refresh_token = create_refresh_token(data={"sub": user.username})
+    new_refresh_token = create_refresh_token(data={"sub": user.username})  # Refresh token rotation
 
-    return {
-        "access_token": access_token,
-        "refresh_token": new_refresh_token,
-        "token_type": "bearer"
-    }
+    # Prepare the JSON response content
+    response_content = {"message": "Tokens refreshed!"}
+
+    response = JSONResponse(content=response_content)
+
+    # Set new Access Token cookie
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=settings.ENVIRONMENT == "production",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        samesite="lax",
+        path="/",
+        domain=settings.BACKEND_HOST_FOR_COOKIES
+    )
+
+    # Set new Refresh Token cookie (for rotation)
+    response.set_cookie(
+        key="refresh_token",
+        value=new_refresh_token,
+        httponly=True,
+        secure=settings.ENVIRONMENT == "production",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        samesite="lax",
+        path="/",
+        domain=settings.BACKEND_HOST_FOR_COOKIES
+    )
+    return response
+
 
 @router.post("/logout")
 def logout(current_user: DBUser = Depends(get_current_active_user)):
     """
-    Handles user logout. For stateless JWTs, this primarily serves
-    as a client-side instruction to discard tokens.
-
-    Requires an authenticated user to confirm logout, providing a layer
-    of security by ensuring only logged-in users can trigger this endpoint.
+    Handles user logout by instructing the browser to delete the authentication cookies.
     """
-    # In a stateless JWT system, there's nothing to "invalidate" on the server
-    # side for the token itself, as it's self-contained and expires on its own.
-    # The primary "logout" action is the client-side discarding of tokens.
-    #
-    # However, you might want to perform server-side actions here like:
-    # - Logging the logout event.
-    # - Revoking the refresh token from a database (if you implement that).
-    # - If you had session-based authentication (e.g., storing session IDs),
-    #   you would delete the server-side session here.
+    response_content = {"message": "Successfully logged out"}
+    response = JSONResponse(content=response_content)
 
-    # Returning a simple success message
-    return {"message": "Successfully logged out"}
+    # Delete the access_token cookie
+    response.delete_cookie(
+        key="access_token",
+        path="/",  # Must match the path where it was set
+        samesite="lax",  # Must match the samesite where it was set
+        secure=settings.ENVIRONMENT == "production",  # Must match secure setting
+        domain = settings.BACKEND_HOST_FOR_COOKIES
+    )
+
+    # Delete the refresh_token cookie
+    response.delete_cookie(
+        key="refresh_token",
+        path="/",  # Must match the path where it was set
+        samesite="lax",
+        secure=settings.ENVIRONMENT == "production",
+        domain=settings.BACKEND_HOST_FOR_COOKIES
+    )
+
+    return response
 
