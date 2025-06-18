@@ -1,5 +1,12 @@
+from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
+
+class ErrorResponse(BaseModel):
+    status_code: int
+    error_type: str
+    detail: str
+    timestamp: str = datetime.now().isoformat()
 
 class Token(BaseModel):
     access_token: str

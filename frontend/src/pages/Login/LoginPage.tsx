@@ -75,9 +75,8 @@ const LoginPage = () => {
     function onSubmit(values: z.infer<typeof loginSchema>) {
         // Transform the form values to the desired output format
         const submissionData = {
-            identifier: values.username,
+            username: values.username,
             password: values.password,
-            remember: values.remember || false,
         };
 
         loginMutate(submissionData)
