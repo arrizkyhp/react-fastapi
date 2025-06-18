@@ -8,10 +8,7 @@ app = FastAPI(title=settings.PROJECT_NAME, debug=settings.DEBUG)
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # Local development
-        "https://your-staging-url.com"  # Add your staging URL here
-    ],
+    allow_origins=settings.CORS_ORIGINS.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

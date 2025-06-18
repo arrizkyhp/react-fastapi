@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "FastAPI Auth"
     DEBUG: bool = False
+    CORS_ORIGINS: str = "http://localhost:5173,https://your-staging-url.com"
 
     class Config:
         env_file = ".env"
