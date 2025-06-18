@@ -4,6 +4,7 @@ export const ENDPOINTS = {
         LOGIN: '/auth/login',
     },
     USERS: {
+        ME: '/users/me',
         GET: '/app/users',
     },
     ROLES: {

@@ -10,9 +10,9 @@ interface AuthStatusResponse {
 
 export const useAuthStatus = () => {
   const {
-    AUTHENTICATION: {
-      STATUS
-    }
+    USERS: {
+      ME
+    },
   } = ENDPOINTS;
 
   const {
@@ -21,7 +21,7 @@ export const useAuthStatus = () => {
     isLoading
   } = useGetData<AuthStatusResponse>(
       ["authStatus"],
-      STATUS,
+      ME,
       {
         options: {
           refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes

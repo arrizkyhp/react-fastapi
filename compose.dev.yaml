@@ -26,11 +26,7 @@ services:
     volumes:
       - ./backend:/app
     environment:
-      - APP_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/fastapi
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=fastapi
     depends_on:
       postgres:
         condition: service_healthy
@@ -39,15 +35,20 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
+#    command: pnpm run dev -- --host 0.0.0.0 --port 5173
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.vite
     ports:
-      - "8001:80"
+      - "8001:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+      - VITE_API_VERSION=v1
+      - CHOKIDAR_USEPOLLING=true
     depends_on:
       - backend
-    environment:
-      - VITE_API_URL=http://backend:8000/api
-      - VITE_API_VERSION=v1
 
 volumes:
-  backend_data:
   postgres_data:

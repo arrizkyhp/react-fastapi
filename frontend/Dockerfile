@@ -17,6 +17,7 @@ RUN pnpm run build
 FROM nginx:stable-alpine as production-stage
 # Copy the built frontend files into Nginx's default static directory
 COPY --from=build-stage /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port 80, the default HTTP port
 EXPOSE 80

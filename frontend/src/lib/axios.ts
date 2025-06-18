@@ -1,7 +1,10 @@
-import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios'
+
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_VERSION = import.meta.env.VITE_API_VERSION;
 
 const api: AxiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL, // Set your base URL here
+    baseURL: `${API_BASE_URL}/${API_VERSION}`, // Set your base URL here
     withCredentials: true, // Automatically include cookies
     headers: {
         'Content-Type': 'application/json',

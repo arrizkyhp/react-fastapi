@@ -7,12 +7,14 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss(),],
   server: {
-    proxy: {
-      '/api': { // Or whatever prefix your Flask routes have
-        target: 'http://127.0.0.1:5000', // Your Flask backend
-        changeOrigin: true,
-        // rewrite: (path) => path.replace(/^\/api/, '') // if your Flask doesn't use /api prefix
-      }
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: true,
+    watch: {
+      usePolling: true, // Enable polling for file changes in Docker
+    },
+    hmr: {
+      port: 5173, // Use the same port for HMR
     }
   },
   resolve: {
