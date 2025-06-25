@@ -7,16 +7,17 @@ from ...core.database import get_db
 from ...crud.audit_log import audit_log_crud
 from ...models.user import User
 from ...schemas.audit_log import (
-    AuditLogListResponse,
     AuditLogResponse,
     AuditLogFilters,
-    PaginationMetadata
 )
-
+from ...schemas.common import (
+    PaginationMetadata,
+    PaginatedResponse
+)
 router = APIRouter()
 
 
-@router.get("/audit-logs", response_model=AuditLogListResponse)
+@router.get("/audit-logs", response_model=PaginatedResponse)
 def get_audit_logs(
         request: Request,
         page: int = Query(1, ge=1, description="Page number"),
@@ -88,7 +89,7 @@ def get_audit_logs(
         log_dict = log.to_dict()
         audit_log_responses.append(AuditLogResponse(**log_dict))
 
-    return AuditLogListResponse(
+    return PaginatedResponse(
         items=audit_log_responses,
         pagination=PaginationMetadata(**pagination_metadata)
     )
@@ -113,7 +114,7 @@ def get_audit_log(
 
 
 # Optional: Get audit logs for current user only (non-superuser endpoint)
-@router.get("/my-audit-logs", response_model=AuditLogListResponse)
+@router.get("/my-audit-logs", response_model=PaginatedResponse)
 def get_my_audit_logs(
         request: Request,
         page: int = Query(1, ge=1, description="Page number"),
@@ -179,7 +180,7 @@ def get_my_audit_logs(
         log_dict = log.to_dict()
         audit_log_responses.append(AuditLogResponse(**log_dict))
 
-    return AuditLogListResponse(
+    return PaginatedResponse(
         items=audit_log_responses,
         pagination=PaginationMetadata(**pagination_metadata)
     )

@@ -87,3 +87,8 @@ def get_current_admin_user(current_user: User = Depends(get_current_active_user)
         )
     print(f"DEBUG: User {current_user.username} is admin.")
     return current_user
+
+
+def get_current_superuser(current_user: User = Depends(get_current_active_user)) -> User:
+    """Alias for get_current_admin_user for backward compatibility"""
+    return get_current_admin_user(current_user)

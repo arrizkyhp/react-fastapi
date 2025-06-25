@@ -44,21 +44,21 @@ class AuditLogFilters(BaseModel):
     search: Optional[str] = None
     from_date: Optional[str] = None
     to_date: Optional[str] = None
-    sort_by: Optional[str] = Field(default="timestamp", regex="^(timestamp|date|user|action|entity)$")
-    sort_order: Optional[str] = Field(default="desc", regex="^(asc|desc)$")
+    sort_by: Optional[str] = Field(default="timestamp", pattern="^(timestamp|date|user|action|entity)$")
+    sort_order: Optional[str] = Field(default="desc", pattern="^(asc|desc)$")
 
 
-class PaginationMetadata(BaseModel):
-    total_items: int
-    total_pages: int
-    current_page: int
-    per_page: int
-    has_next: bool
-    has_prev: bool
-    next_num: Optional[int] = None
-    prev_num: Optional[int] = None
-
-
-class AuditLogListResponse(BaseModel):
-    items: List[AuditLogResponse]
-    pagination: PaginationMetadata
+# class PaginationMetadata(BaseModel):
+#     total_items: int
+#     total_pages: int
+#     current_page: int
+#     per_page: int
+#     has_next: bool
+#     has_prev: bool
+#     next_num: Optional[int] = None
+#     prev_num: Optional[int] = None
+#
+#
+# class AuditLogListResponse(BaseModel):
+#     items: List[AuditLogResponse]
+#     pagination: PaginationMetadata
