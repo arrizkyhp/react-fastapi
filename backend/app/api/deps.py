@@ -76,3 +76,14 @@ def get_current_active_user(current_user: User = Depends(get_current_user)) -> U
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
     print(f"DEBUG: User {current_user.username} is active.")
     return current_user
+
+
+def get_current_admin_user(current_user: User = Depends(get_current_active_user)) -> User:
+    if not current_user.is_superuser:
+        print(f"DEBUG: User {current_user.username} is not admin.")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required"
+        )
+    print(f"DEBUG: User {current_user.username} is admin.")
+    return current_user

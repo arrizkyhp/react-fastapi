@@ -63,5 +63,8 @@ class UserCRUD:
     def is_active(self, user: User) -> bool:
         return user.is_active
 
+    def get_all_users(self, db: Session, skip: int = 0, limit: int = 100) -> list[User]:
+        return db.query(User).offset(skip).limit(limit).all()
+
 
 user_crud = UserCRUD()
